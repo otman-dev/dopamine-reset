@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
+import { NextResponse } from 'next/server';
+import clientPromise from '../../../../lib/mongodb';
 import { nanoid } from 'nanoid';
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     const client = await clientPromise;
     const db = client.db('dopamine-reset');

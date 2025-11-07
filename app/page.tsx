@@ -2,26 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { phaseData } from '@/lib/phaseData';
+import { phaseData } from '../lib/phaseData';
 
-export default function TrackerClient() {
+export default function Home() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [startDate, setStartDate] = useState<Date | null>(null);
-  const [currentDay, setCurrentDay] = useState<number>(0);
-  const [currentHour, setCurrentHour] = useState<number>(0);
-  const [isActive, setIsActive] = useState<boolean>(false);
+  const [currentDay, setCurrentDay] = useState(0);
+  const [currentHour, setCurrentHour] = useState(0);
+  const [isActive, setIsActive] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [shareUrl, setShareUrl] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [shareUrl, setShareUrl] = useState('');
 
-  // Load user data from URL or localStorage
   useEffect(() => {
     const loadUserData = async () => {
-      const urlUserId = searchParams.get('id');
+      const urlUserId = searchParams?.get('id');
       
       if (urlUserId) {
-        // Load from database using URL parameter
         try {
           const response = await fetch(`/api/user/${urlUserId}`);
           if (response.ok) {
@@ -33,14 +31,11 @@ export default function TrackerClient() {
               localStorage.setItem('dopamineResetUserId', data.userId);
               setShareUrl(`${window.location.origin}?id=${data.userId}`);
             }
-          } else {
-            console.error('User not found');
           }
         } catch (error) {
           console.error('Failed to load user data:', error);
         }
       } else if (typeof window !== 'undefined') {
-        // Try to load from localStorage
         const savedUserId = localStorage.getItem('dopamineResetUserId');
         if (savedUserId) {
           try {
@@ -52,7 +47,6 @@ export default function TrackerClient() {
               setIsActive(true);
               setShareUrl(`${window.location.origin}?id=${data.userId}`);
             } else {
-              // User not found, clear localStorage
               localStorage.removeItem('dopamineResetUserId');
             }
           } catch (error) {
@@ -66,7 +60,6 @@ export default function TrackerClient() {
     loadUserData();
   }, [searchParams]);
 
-  // Update current day and hour based on elapsed time since start
   useEffect(() => {
     if (!startDate) return;
 
@@ -77,15 +70,13 @@ export default function TrackerClient() {
       const diffDays = Math.floor(diffHours / 24);
       const hourInCurrentDay = diffHours % 24;
 
-      // Calculate which day of the program (1-14)
       const programDay = Math.min(diffDays + 1, 14);
       setCurrentDay(programDay);
       setCurrentHour(hourInCurrentDay);
     };
 
     updateProgress();
-    const interval = setInterval(updateProgress, 60000); // Update every minute
-
+    const interval = setInterval(updateProgress, 60000);
     return () => clearInterval(interval);
   }, [startDate]);
 
@@ -93,7 +84,6 @@ export default function TrackerClient() {
     try {
       const response = await fetch('/api/user/start', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
       });
       
       if (response.ok) {
@@ -106,23 +96,19 @@ export default function TrackerClient() {
           localStorage.setItem('dopamineResetUserId', data.userId);
           const url = `${window.location.origin}?id=${data.userId}`;
           setShareUrl(url);
+          router.push(`/?id=${data.userId}`);
         }
-        
-        // Update URL without reload
-        router.push(`/?id=${data.userId}`);
       } else {
-        const errorData = await response.json();
-        console.error('Start failed:', errorData);
-        alert('Failed to start. Please check if MongoDB is configured in Vercel environment variables.');
+        alert('Failed to start. Please check if MongoDB is configured.');
       }
     } catch (error) {
       console.error('Failed to start program:', error);
-      alert('Failed to start. Please try again or check your internet connection.');
+      alert('Failed to start. Please try again.');
     }
   };
 
   const handleReset = () => {
-    if (confirm('Are you sure you want to reset your progress? This cannot be undone.')) {
+    if (confirm('Are you sure you want to reset your progress?')) {
       setStartDate(null);
       setIsActive(false);
       setCurrentDay(0);
@@ -138,29 +124,24 @@ export default function TrackerClient() {
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareUrl);
-    alert('Link copied! You can now access your progress from any device.');
+    alert('Link copied!');
   };
 
-  // Get current phase data
   const currentPhaseData = phaseData.find(p => p.day === currentDay);
   const dailyProgress = (currentHour / 24) * 100;
   const overallProgress = ((currentDay - 1) / 14 + (currentHour / 24) / 14) * 100;
 
   if (loading) {
     return (
-      <div className="min-h-screen px-4 py-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl mb-4">⏳</div>
-          <div className="text-slate-400">Loading...</div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-4xl">⏳</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen px-4 py-8 md:px-8">
+    <main className="min-h-screen px-4 py-8 md:px-8">
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
             Dopamine Reset Tracker
@@ -171,7 +152,6 @@ export default function TrackerClient() {
         </div>
 
         {!isActive ? (
-          /* Start Screen */
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 md:p-12 shadow-2xl border border-slate-700">
             <div className="text-center mb-8">
               <div className="text-6xl mb-6">🚭</div>
@@ -180,7 +160,6 @@ export default function TrackerClient() {
               </h2>
               <p className="text-slate-300 mb-6 leading-relaxed">
                 This 14-day program will guide you through cigarette withdrawal and dopamine recalibration.
-                Track your progress automatically with hourly reminders and phase-specific guidance.
               </p>
               <div className="bg-slate-900/50 rounded-lg p-4 mb-6 text-left">
                 <p className="text-sm text-slate-400 mb-2">You'll experience:</p>
@@ -200,9 +179,7 @@ export default function TrackerClient() {
             </button>
           </div>
         ) : (
-          /* Active Tracking Screen */
           <div className="space-y-6">
-            {/* Current Status Card */}
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 md:p-8 shadow-2xl border border-slate-700">
               <div className="flex justify-between items-start mb-6">
                 <div>
@@ -219,7 +196,6 @@ export default function TrackerClient() {
                 </div>
               </div>
 
-              {/* Daily Progress */}
               <div className="mb-6">
                 <div className="flex justify-between text-sm text-slate-400 mb-2">
                   <span>Today's Progress</span>
@@ -227,13 +203,12 @@ export default function TrackerClient() {
                 </div>
                 <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-emerald-500 to-cyan-500 h-full transition-all duration-1000 ease-out"
+                    className="bg-gradient-to-r from-emerald-500 to-cyan-500 h-full transition-all duration-1000"
                     style={{ width: `${dailyProgress}%` }}
                   />
                 </div>
               </div>
 
-              {/* Overall Progress */}
               <div className="mb-6">
                 <div className="flex justify-between text-sm text-slate-400 mb-2">
                   <span>Overall Progress</span>
@@ -241,13 +216,12 @@ export default function TrackerClient() {
                 </div>
                 <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 h-full transition-all duration-1000 ease-out"
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 h-full transition-all duration-1000"
                     style={{ width: `${overallProgress}%` }}
                   />
                 </div>
               </div>
 
-              {/* Streak Display */}
               {currentDay === 14 && currentHour >= 23 ? (
                 <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border-2 border-emerald-500 rounded-xl p-6 text-center">
                   <div className="text-4xl mb-2">🎉</div>
@@ -262,7 +236,6 @@ export default function TrackerClient() {
               )}
             </div>
 
-            {/* Side Effects Card */}
             {currentPhaseData && (
               <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 md:p-8 shadow-2xl border border-slate-700">
                 <h3 className="text-xl font-semibold mb-4 flex items-center">
@@ -281,7 +254,6 @@ export default function TrackerClient() {
               </div>
             )}
 
-            {/* Identity Reminder Card */}
             <div className="bg-gradient-to-br from-emerald-900/30 to-cyan-900/30 backdrop-blur-sm rounded-2xl p-6 md:p-8 shadow-2xl border-2 border-emerald-500/30">
               <div className="text-center">
                 <div className="text-3xl mb-3">💪</div>
@@ -294,7 +266,6 @@ export default function TrackerClient() {
               </div>
             </div>
 
-            {/* Share Link Card */}
             {shareUrl && (
               <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 shadow-2xl border border-slate-700">
                 <h3 className="text-lg font-semibold mb-3 flex items-center">
@@ -309,11 +280,11 @@ export default function TrackerClient() {
                     type="text"
                     readOnly
                     value={shareUrl}
-                    className="flex-1 bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-300 truncate"
+                    className="flex-1 bg-slate-900/50 border border-slate-600 rounded-lg px-3 py-2 text-sm text-slate-300"
                   />
                   <button
                     onClick={handleCopyLink}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
                   >
                     Copy
                   </button>
@@ -321,7 +292,6 @@ export default function TrackerClient() {
               </div>
             )}
 
-            {/* Reset Button */}
             <button
               onClick={handleReset}
               className="w-full bg-slate-700/50 hover:bg-slate-700 text-slate-300 font-medium py-3 px-6 rounded-xl transition-all border border-slate-600"
@@ -331,11 +301,10 @@ export default function TrackerClient() {
           </div>
         )}
 
-        {/* Footer */}
         <div className="text-center mt-8 text-slate-500 text-sm">
           <p>Your progress syncs across all devices via secure link</p>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

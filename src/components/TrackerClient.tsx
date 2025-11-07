@@ -1,21 +1,24 @@
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import { phaseData } from '../phaseData';
+'use client';
 
-export default function Home() {
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { phaseData } from '@/lib/phaseData';
+
+export default function TrackerClient() {
   const router = useRouter();
-  const [startDate, setStartDate] = useState(null);
-  const [currentDay, setCurrentDay] = useState(0);
-  const [currentHour, setCurrentHour] = useState(0);
-  const [isActive, setIsActive] = useState(false);
-  const [userId, setUserId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [shareUrl, setShareUrl] = useState('');
+  const searchParams = useSearchParams();
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [currentDay, setCurrentDay] = useState<number>(0);
+  const [currentHour, setCurrentHour] = useState<number>(0);
+  const [isActive, setIsActive] = useState<boolean>(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [shareUrl, setShareUrl] = useState<string>('');
 
   // Load user data from URL or localStorage
   useEffect(() => {
     const loadUserData = async () => {
-      const urlUserId = router.query.id;
+      const urlUserId = searchParams.get('id');
       
       if (urlUserId) {
         // Load from database using URL parameter
@@ -60,10 +63,8 @@ export default function Home() {
       setLoading(false);
     };
 
-    if (router.isReady) {
-      loadUserData();
-    }
-  }, [router.isReady, router.query.id]);
+    loadUserData();
+  }, [searchParams]);
 
   // Update current day and hour based on elapsed time since start
   useEffect(() => {
@@ -71,7 +72,7 @@ export default function Home() {
 
     const updateProgress = () => {
       const now = new Date();
-      const diffMs = now - startDate;
+      const diffMs = now.getTime() - startDate.getTime();
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
       const diffDays = Math.floor(diffHours / 24);
       const hourInCurrentDay = diffHours % 24;
@@ -108,7 +109,7 @@ export default function Home() {
         }
         
         // Update URL without reload
-        router.push(`/?id=${data.userId}`, undefined, { shallow: true });
+        router.push(`/?id=${data.userId}`);
       } else {
         const errorData = await response.json();
         console.error('Start failed:', errorData);
@@ -128,8 +129,10 @@ export default function Home() {
       setCurrentHour(0);
       setUserId(null);
       setShareUrl('');
-      localStorage.removeItem('dopamineResetUserId');
-      router.push('/', undefined, { shallow: true });
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('dopamineResetUserId');
+      }
+      router.push('/');
     }
   };
 

@@ -1,4 +1,26 @@
-export const phaseData = [
+export interface PhaseData {
+  day: number;
+  phase: string;
+  sideEffects: string;
+  hours: string[];
+}
+
+function getHourlyMessage(hour: number): string {
+  if (hour >= 6 && hour < 9) {
+    return "Energy may be low; hydrate, breathe. I don't smoke — that chapter is closed.";
+  } else if (hour >= 12 && hour < 15) {
+    return "Cravings may peak; observe urges. I am a non-smoker.";
+  } else if (hour >= 15 && hour < 18) {
+    return "Mood swings or restlessness are temporary. I don't smoke.";
+  } else if (hour >= 18 && hour < 21) {
+    return "Relax and wind down; dopamine is recalibrating. I am a non-smoker.";
+  } else if (hour >= 21 || hour < 6) {
+    return "Avoid triggers before sleep; observe your mind. I don't smoke.";
+  }
+  return "Stay present, breathe deeply. I am a non-smoker.";
+}
+
+export const phaseData: PhaseData[] = [
   {
     day: 1,
     phase: "Withdrawal",
@@ -112,18 +134,3 @@ export const phaseData = [
     )
   }
 ];
-
-function getHourlyMessage(hour) {
-  if (hour >= 6 && hour < 9) {
-    return "Energy may be low; hydrate, breathe. I don't smoke — that chapter is closed.";
-  } else if (hour >= 12 && hour < 15) {
-    return "Cravings may peak; observe urges. I am a non-smoker.";
-  } else if (hour >= 15 && hour < 18) {
-    return "Mood swings or restlessness are temporary. I don't smoke.";
-  } else if (hour >= 18 && hour < 21) {
-    return "Relax and wind down; dopamine is recalibrating. I am a non-smoker.";
-  } else if (hour >= 21 || hour < 6) {
-    return "Avoid triggers before sleep; observe your mind. I don't smoke.";
-  }
-  return "Stay present, breathe deeply. I am a non-smoker.";
-}
